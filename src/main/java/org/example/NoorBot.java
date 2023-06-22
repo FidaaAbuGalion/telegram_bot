@@ -1,5 +1,6 @@
 package org.example;
 
+import org.glassfish.grizzly.strategies.LeaderFollowerNIOStrategy;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -14,6 +15,7 @@ import java.util.List;
 
 public class NoorBot extends TelegramLongPollingBot  {
     private List <Long> chatId ;
+
 
     public NoorBot (){
         this.chatId = new ArrayList<>() ;
@@ -34,9 +36,23 @@ public class NoorBot extends TelegramLongPollingBot  {
     public void onUpdateReceived(Update update) {
         System.out.println(update.getMessage().getText());
         long chatId = update.getMessage().getChatId() ;
+//        Lead lead = new Lead() ;  //شوفي محلكات لييد هي محلكا فيها معلومات الشخص الي فات يحكي مع البوت بنسجله حسب التشات تبعه موجود الشرح عن شاي فلدرس الموكلات
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         if (!this.chatId.contains(chatId)){
+
+                sendMessage.setText(" do you support me for my office ?");
+                InlineKeyboardButton ButtonYes = new InlineKeyboardButton(" Yes");
+                ButtonYes.setCallbackData(" Yes");
+                InlineKeyboardButton ButtonNo = new InlineKeyboardButton("No");
+                ButtonNo.setCallbackData(" No");
+                List<InlineKeyboardButton> NoYesButtons = Arrays.asList(ButtonYes, ButtonNo);
+                List<List<InlineKeyboardButton>> keyboardYesNo = Arrays.asList(NoYesButtons);
+                InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+                inlineKeyboardMarkup.setKeyboard(keyboardYesNo);
+                sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+                sendMessage.setText("choose from the option");  //هني بتجيه الرساله مع زرين لازم اذا حط no توقف التوخناه واذا حط yes يطلب منه اسمه وهويته ويسجلهن ف lead وكذي بنحفظ كل يوزر وبعدين بتجيه الرساله الي تحت
+
             sendMessage.setText("Welcome, you are now with the best bot. I have a lot of options for you\n" +
                     "1: Some of the funny jokes\n" +
                     "2: Random facts about cats\n" +
@@ -46,22 +62,6 @@ public class NoorBot extends TelegramLongPollingBot  {
                     "do you want to ask ?");
             this.chatId.add(chatId) ;
         }else {
-//            String answer = update.getMessage().getText() ;
-//            if (answer.equals("")){
-//                sendMessage.setText("");
-//            }
-//            if (answer.equals("")){
-//                sendMessage.setText("");
-//            }
-//            if (answer.equals("")){
-//                sendMessage.setText("");
-//            }
-//            if (answer.equals("")){
-//                sendMessage.setText("");
-//            }
-//            if (answer.equals("")){
-//                sendMessage.setText("");
-//            }
             InlineKeyboardButton Button1 = new InlineKeyboardButton(" 1") ;
             Button1.setCallbackData(" 1");
             InlineKeyboardButton Button2 = new InlineKeyboardButton(" 2") ;
@@ -77,7 +77,7 @@ public class NoorBot extends TelegramLongPollingBot  {
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup() ;
             inlineKeyboardMarkup.setKeyboard(keyboard);
             sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-            sendMessage.setText("choose from the option");
+            sendMessage.setText("choose from the option");  //هني لازم يختار رقم الي وديا يسر عنده حسب طلبه بندبيس له
             //كل الاشياء الي هني هنه الاشياء الي لازم البوت يسويها كلشي بينكتب هني ودايما لازم يكون في اضافات على محلكات BotActivities
 
         }
