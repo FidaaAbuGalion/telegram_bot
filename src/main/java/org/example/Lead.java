@@ -1,14 +1,39 @@
 package org.example;
 
+import java.lang.invoke.SwitchPoint;
+import java.util.ArrayList;
+import java.util.LinkedList;
+
 public class Lead {
 
     private long chatId;
     private String name;
     private int supportStatus;
+
+    public LinkedList<Integer> getTheNumberOfTheServicesYouUse() {
+        return TheNumberOfTheServicesYouUse;
+    }
+
+    public long getChatId() {
+        return chatId;
+    }
+
+    public void setTheNumberOfTheServicesYouUse(LinkedList<Integer> theNumberOfTheServicesYouUse) {
+        TheNumberOfTheServicesYouUse = theNumberOfTheServicesYouUse;
+    }
+
+    public String getName() {
+        return name;
+    }
+
     private String phone;
+    private LinkedList<Integer> TheNumberOfTheServicesYouUse ;
 
     public static final int SUPPORT_STATUS_UNKNOWN = 0;
     public static final int SUPPORT_STATUS_POSITIVE = 1;
+
+
+
     public static final int SUPPORT_STATUS_NEGATIVE = 2;
 
     public Lead(long chatId) {

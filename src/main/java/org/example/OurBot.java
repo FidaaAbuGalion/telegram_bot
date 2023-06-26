@@ -1,14 +1,13 @@
 package org.example;
 
+import apiModel.APODModel;
+import apiModel.JokeModel;
+import apiModel.QuoteModel;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -18,8 +17,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
 
 import java.io.IOException;
@@ -28,6 +25,10 @@ import java.util.*;
 public class OurBot extends TelegramLongPollingBot  {
     private List <Long> chatId ;
     private QuoteModel quoteModel;
+    private Map<Long , Lead> leadMap ;
+    private LinkedList<Lead> theLeads = new LinkedList<>() ;
+    private Lead LeadHere ;
+    protected String mostActiveUser;
 
     private static final String COVID_API_URL = "https://disease.sh/v3/covid-19";
     private static final String JOKE_API_URL = "https://v2.jokeapi.dev/joke/Any";
@@ -39,6 +40,7 @@ public class OurBot extends TelegramLongPollingBot  {
 
     public OurBot (){
         this.chatId = new ArrayList<>() ;
+        this.leadMap = new HashMap<>() ;
     }
 
     @Override
@@ -48,6 +50,16 @@ public class OurBot extends TelegramLongPollingBot  {
 
     @Override
     public void onUpdateReceived(Update update) {
+        /*long chatId1 = update.getMessage().getChatId() ;
+       Lead lead = this.leadMap.get(chatId1) ;
+       LeadHere = lead ;
+        if (lead == null){
+            //first time
+           lead = new Lead(chatId1);
+           this.leadMap.put(chatId1 , lead) ;
+           theLeads.push(lead);
+        }*/
+
         SendMessage sendMessage = new SendMessage();
         CallbackQuery callbackQuery = update.getCallbackQuery();
         if (update.hasMessage()) {
@@ -59,19 +71,31 @@ public class OurBot extends TelegramLongPollingBot  {
             } else {
                 botMenu(chatId);
             }
-         } else if (update.hasCallbackQuery()) {
-        String data = callbackQuery.getData();
-        long chatId = callbackQuery.getMessage().getChatId();
-        if (data.equals(" Yes")) {
-            botMenu(chatId);
-        }else if (data.equals(" No")){
-            sendMessage.setChatId(chatId);
-            sendMessage.setText("Thank you and goodbye!");
-            send(sendMessage);
-        }
-        else {
-            userOption(callbackQuery);
+        } else if (update.hasCallbackQuery()) {
+            String data = callbackQuery.getData();
+            long chatId = callbackQuery.getMessage().getChatId();
+            if (data.equals(" Yes")) {
+                botMenu(chatId);
+            }else if (data.equals(" No")){
+                sendMessage.setChatId(chatId);
+                sendMessage.setText("Thank you and goodbye!");
+                send(sendMessage);
             }
+            else {
+                userOption(callbackQuery);
+            }
+        }
+        SaveTheVisitor(update);
+    }
+    private void SaveTheVisitor(Update update){    //new
+        long chatId1 = update.getMessage().getChatId() ;
+        Lead lead = this.leadMap.get(chatId1) ;
+        LeadHere = lead ;
+        if (lead == null){
+            //first time
+            lead = new Lead(chatId1);
+            this.leadMap.put(chatId1 , lead) ;
+            theLeads.push(lead);
         }
     }
 
@@ -139,22 +163,99 @@ public class OurBot extends TelegramLongPollingBot  {
 
 
     private void userOption(CallbackQuery callbackQuery) {
+        int numChoices = 0;
         String data = callbackQuery.getData();
         long chatId = callbackQuery.getMessage().getChatId();
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
+        LinkedList<Integer> visitorChoices = new LinkedList<>();
 
-        if (data.equals(" 1")) {
+        if (data.equals(" 1") && numChoices < 3) {
             sendJoke(chatId);
-        }else if (data.equals(" 2")){
+            visitorChoices.push(1);
+            LeadHere.setTheNumberOfTheServicesYouUse(visitorChoices);
+            numChoices++;
+        } else if (data.equals(" 2") && numChoices < 3) {
             sendAPODModel(chatId);
-        }else if (data.equals(" 3")){
+            visitorChoices.push(2);
+            LeadHere.setTheNumberOfTheServicesYouUse(visitorChoices);
+            numChoices++;
+        } else if (data.equals(" 3") && numChoices < 3) {
             sendCatFacts(chatId);
-        }else if (data.equals(" 4")){
+            visitorChoices.push(3);
+            LeadHere.setTheNumberOfTheServicesYouUse(visitorChoices);
+            numChoices++;
+        } else if (data.equals(" 4") && numChoices < 3) {
             sendCoronaVirusStats(chatId);
-        }else if (data.equals(" 5")){
+            visitorChoices.push(4);
+            LeadHere.setTheNumberOfTheServicesYouUse(visitorChoices);
+            numChoices++;
+        } else if (data.equals(" 5") && numChoices < 3) {
             sendRandomQuote(chatId);
+            visitorChoices.push(5);
+            LeadHere.setTheNumberOfTheServicesYouUse(visitorChoices);
+            numChoices++;
         }
+
+        Map<Long, LinkedList<Integer>> userChoices = (Map<Long, LinkedList<Integer>>) LeadHere.getTheNumberOfTheServicesYouUse();
+        mostActiveUser = findMostActiveUser(userChoices);
+
+
+    }
+    public LinkedList<String> StringTheServicesHeDoes(Lead lead) {   //ني بتبين اش البعلوت الي سواهن اليوزر
+        LinkedList<String> TheServices = new LinkedList<>() ;
+        TheServices.push(lead.getName());
+        for (int i = 0; i < lead.getTheNumberOfTheServicesYouUse().size(); i++) {
+            if (lead.getTheNumberOfTheServicesYouUse().get(i) == 1){
+                TheServices.set(i,"jokes")  ;
+            }
+            if (lead.getTheNumberOfTheServicesYouUse().get(i) == 2){
+                TheServices.set(i,"facts about the space")  ;
+            }
+            if (lead.getTheNumberOfTheServicesYouUse().get(i) == 3){
+                TheServices.set(i,"facts about cats")  ;
+            }
+            if (lead.getTheNumberOfTheServicesYouUse().get(i) == 4){
+                TheServices.set(i,"facts about corona virus")  ;
+            }
+            if (lead.getTheNumberOfTheServicesYouUse().get(i) == 5){
+                TheServices.set(i,"option 5")  ;
+            }
+        }
+        return TheServices ;
+    }
+
+    public LinkedList<String> allTheServicesWeDid (){  //هني بترجع كل الخدمات الي تمت من اول ما اشتغل التطبيق
+        LinkedList<String> allTheService = new LinkedList<>();
+        for (Lead theLead : theLeads) {
+            for (int i = 0; i < theLead.getTheNumberOfTheServicesYouUse().size(); i++) {
+                if (theLead.getTheNumberOfTheServicesYouUse().get(i) == 1) {
+                    allTheService.set(i, "jokes");
+                }
+                if (theLead.getTheNumberOfTheServicesYouUse().get(i) == 2) {
+                    allTheService.set(i, "facts about the space");
+                }
+                if (theLead.getTheNumberOfTheServicesYouUse().get(i) == 3) {
+                    allTheService.set(i, "facts about cats");
+                }
+                if (theLead.getTheNumberOfTheServicesYouUse().get(i) == 4) {
+                    allTheService.set(i, "facts about corona virus");
+                }
+                if (theLead.getTheNumberOfTheServicesYouUse().get(i) == 5) {
+                    allTheService.set(i, "option 5");
+                }
+            }
+        }
+        return allTheService ;
+    }
+
+    public LinkedList<String> namesThePeople(){    // بترجع اسماء كل الي حكو معها
+        LinkedList<String> theNames = new LinkedList<>() ;
+        for (Lead lead : theLeads ) {
+            theNames.push(lead.getName()) ;
+        }
+        return theNames ; //hi//
+
     }
 
     private void sendJoke(long chatId) {
@@ -189,6 +290,10 @@ public class OurBot extends TelegramLongPollingBot  {
 
             String apiUrl = NASA_API_URL + NASA_API_URL_KEY;
 
+            int connectTimeout = 5000;
+            int socketTimeout = 10000;
+
+            Unirest.setTimeouts(connectTimeout, socketTimeout);
             HttpResponse<String> response = Unirest.get(apiUrl).asString();
             String json = response.getBody();
 
@@ -295,12 +400,56 @@ public class OurBot extends TelegramLongPollingBot  {
 
         StringBuilder quoteText = new StringBuilder();
 
-            quoteText.append(quoteModel.getAuthor()).append("\n");
-            quoteText.append(quoteModel.getContent()).append("\n");
+        quoteText.append(quoteModel.getAuthor()).append("\n");
+        quoteText.append(quoteModel.getContent()).append("\n");
 
         return quoteText.toString();
     }
 
+    public static String findMostPopularActivity() {
+        Map<String, Integer> activityCount = new HashMap<>();
 
+        List<String> activities = new ArrayList<>();
+        activities.add("jokes");
+        activities.add("space");
+        activities.add("cat facts");
+        activities.add("corona virus");
+        activities.add("quotes");
+        for (String activity : activities) {
+            activityCount.put(activity, activityCount.getOrDefault(activity, 0) + 1);
+        }
+
+        String mostPopularActivity = null;
+        int maxCount = 0;
+
+        for (Map.Entry<String, Integer> entry : activityCount.entrySet()) {
+            String activity = entry.getKey();
+            int count = entry.getValue();
+
+            if (count > maxCount) {
+                mostPopularActivity = activity;
+                maxCount = count;
+            }
+        }
+
+        return mostPopularActivity;
+    }
+    public static String findMostActiveUser(Map<Long, LinkedList<Integer>> userChoices) {
+        String mostActiveUser = null;
+        int maxServicesUsed = 0;
+
+        for (Map.Entry<Long, LinkedList<Integer>> entry : userChoices.entrySet()) {
+            Long userId = entry.getKey();
+            LinkedList<Integer> choices = entry.getValue();
+            int numServicesUsed = choices.size();
+
+            if (numServicesUsed > maxServicesUsed) {
+                mostActiveUser = userId.toString();
+                maxServicesUsed = numServicesUsed;
+            }
+        }
+
+        return mostActiveUser;
+    }
 
 }
